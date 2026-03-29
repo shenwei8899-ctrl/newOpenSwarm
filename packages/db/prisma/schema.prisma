@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  users     User[]
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model User {
+  id        String    @id @default(cuid())
+  tenantId  String
+  email     String    @unique
+  name      String?
+  role      String    @default("owner")
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Project {
+  id              String             @id @default(cuid())
+  tenantId        String
+  name            String
+  templateId      String?
+  status          String             @default("active")
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employeeLinks   ProjectEmployee[]
+  employeeSkills  EmployeeSkill[]
+  discussions     DiscussionSession[]
+  tasks           Task[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([tenantId, status])
+}
+
+model Employee {
+  id                  String                   @id @default(cuid())
+  tenantId            String?
+  name                String
+  role                String
+  description         String                   @default("")
+  avatar              String?
+  agentName           String                   @unique
+  modelName           String?
+  toolGroups          Json                     @default("[]")
+  metadata            Json                     @default("{}")
+  projectLinks        ProjectEmployee[]
+  employeeSkills      EmployeeSkill[]
+  discussionMembers   DiscussionParticipant[]
+  taskAssignments     TaskAssignment[]
+  runtimeJobs         RuntimeJob[]
+  createdAt           DateTime                 @default(now())
+
+  @@index([tenantId])
+}
+
+model ProjectEmployee {
+  projectId   String
+  employeeId  String
+  sortOrder   Int      @default(0)
+  joinedAt    DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, employeeId])
+}
+
+model Skill {
+  id          String          @id
+  name        String
+  description String          @default("")
+  category    String          @default("general")
+  source      String          @default("deerflow")
+  enabled     Boolean         @default(true)
+  metadata    Json            @default("{}")
+  assignments EmployeeSkill[]
+  createdAt   DateTime        @default(now())
+}
+
+model EmployeeSkill {
+  projectId   String
+  employeeId  String
+  skillId     String
+  assignedAt  DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, employeeId, skillId])
+}
+
+model DiscussionSession {
+  id            String                  @id @default(cuid())
+  tenantId      String
+  projectId     String
+  title         String                  @default("")
+  mode          String                  @default("group")
+  status        String                  @default("active")
+  summary       String?
+  createdBy     String?
+  project       Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  participants  DiscussionParticipant[]
+  messages      DiscussionMessage[]
+  tasks         Task[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@index([tenantId])
+  @@index([projectId])
+}
+
+model DiscussionParticipant {
+  discussionId String
+  employeeId   String
+  sortOrder    Int               @default(0)
+  discussion   DiscussionSession @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  employee     Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@id([discussionId, employeeId])
+}
+
+model DiscussionMessage {
+  id           String            @id @default(cuid())
+  discussionId String
+  senderType   String
+  senderId     String?
+  roundNo      Int               @default(0)
+  content      String
+  metadata     Json              @default("{}")
+  discussion   DiscussionSession @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+
+  @@index([discussionId, createdAt])
+}
+
+model Task {
+  id                 String           @id @default(cuid())
+  tenantId           String
+  projectId          String
+  title              String
+  description        String           @default("")
+  sourceDiscussionId String?
+  status             String           @default("queued")
+  summary            String?
+  createdBy          String?
+  project            Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceDiscussion   DiscussionSession? @relation(fields: [sourceDiscussionId], references: [id], onDelete: SetNull)
+  assignments        TaskAssignment[]
+  runtimeJobs        RuntimeJob[]
+  artifacts          Artifact[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([tenantId, status])
+  @@index([projectId, status])
+}
+
+model TaskAssignment {
+  taskId      String
+  employeeId  String
+  status      String    @default("queued")
+  assignedAt  DateTime  @default(now())
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, employeeId])
+}
+
+model RuntimeJob {
+  id          String     @id @default(cuid())
+  tenantId    String
+  taskId      String
+  employeeId  String
+  threadId    String
+  agentName   String
+  status      String     @default("queued")
+  error       String?
+  task        Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  employee    Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  artifacts   Artifact[]
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([taskId, status])
+  @@index([threadId])
+}
+
+model Artifact {
+  id           String     @id @default(cuid())
+  tenantId     String
+  taskId       String
+  runtimeJobId String
+  threadId     String
+  virtualPath  String
+  filename     String
+  mimeType     String?
+  sizeBytes    BigInt?
+  task         Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  runtimeJob   RuntimeJob @relation(fields: [runtimeJobId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([taskId])
+  @@index([runtimeJobId])
+}

@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    "allowJs": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@openswarm/shared": ["packages/shared/src/index.ts"],
+      "@openswarm/shared/*": ["packages/shared/src/*"],
+      "@openswarm/db": ["packages/db/src/index.ts"],
+      "@openswarm/db/*": ["packages/db/src/*"],
+      "@openswarm/ui": ["packages/ui/src/index.ts"],
+      "@openswarm/ui/*": ["packages/ui/src/*"],
+      "@openswarm/deerflow-adapter": ["packages/deerflow-adapter/src/index.ts"],
+      "@openswarm/deerflow-adapter/*": ["packages/deerflow-adapter/src/*"]
+    }
+  }
+}

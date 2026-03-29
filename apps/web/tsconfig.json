@@ -1,0 +1,40 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "incremental": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@openswarm/shared/*": [
+        "../../packages/shared/src/*"
+      ],
+      "@openswarm/db/*": [
+        "../../packages/db/src/*"
+      ],
+      "@openswarm/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@openswarm/deerflow-adapter/*": [
+        "../../packages/deerflow-adapter/src/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "isolatedModules": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
