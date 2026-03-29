@@ -193,11 +193,12 @@ export default async function HomePage() {
               position: relative;
               z-index: 1;
               display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(300px, 320px));
-              justify-content: start;
+              grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
               gap: 18px 12px;
               align-items: start;
               padding-inline: 6px;
+              width: 100%;
+              box-sizing: border-box;
             }
             .card-hex {
               position: relative;
@@ -424,7 +425,7 @@ export default async function HomePage() {
             }
             @media (min-width: 1660px) {
               .grid-64 {
-                grid-template-columns: repeat(6, minmax(300px, 320px));
+                grid-template-columns: repeat(6, minmax(0, 1fr));
               }
             }
             @media (max-width: 1500px) {
@@ -491,7 +492,8 @@ export default async function HomePage() {
           <div className="home-brand">OpenSwarm</div>
           <div className="home-links">
             <Link href="/">数字员工</Link>
-            <Link href={activeProject ? `/teams/${activeProject.id}/workspace` : "/teams/new"}>
+            <Link href="/skills.html">技能库</Link>
+            <Link href="/teams">
               我的团队
             </Link>
             <Link href="/teams/new">创建团队</Link>
@@ -507,11 +509,9 @@ export default async function HomePage() {
                 <Link className="hero-button-primary" href="/teams/new">
                   创建团队
                 </Link>
-                {activeProject ? (
-                  <Link className="hero-button-secondary" href={`/teams/${activeProject.id}/workspace`}>
-                    进入工作台
-                  </Link>
-                ) : null}
+                <Link className="hero-button-secondary" href="/teams">
+                  团队列表
+                </Link>
               </div>
             </div>
             <div className="hero-stat">
@@ -535,7 +535,7 @@ export default async function HomePage() {
           {activeProject ? (
             <div className="home-links">
               <span>最近团队：</span>
-              <Link href={`/teams/${activeProject.id}/workspace`}>{activeProject.name}</Link>
+              <Link href="/teams">{activeProject.name}</Link>
             </div>
           ) : null}
         </section>

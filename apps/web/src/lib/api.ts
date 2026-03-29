@@ -12,6 +12,7 @@ import type {
   ,
   TaskSummary
 } from "@openswarm/shared";
+import { standardEmployeeTemplates } from "@openswarm/shared";
 import {
   demoArtifacts,
   demoDiscussionMessages,
@@ -51,16 +52,31 @@ export async function getProject(projectId: string): Promise<ProjectDetail | nul
 }
 
 export async function getEmployeeCatalog(): Promise<EmployeeCatalogItem[]> {
-  return (
-    (await apiFetch<EmployeeCatalogItem[]>("/employees/catalog")) ??
-    demoEmployees.map((employee) => ({
-      id: employee.id,
-      name: employee.name,
-      role: employee.role,
-      description: employee.description,
-      defaultModel: employee.defaultModel
-    }))
-  );
+  const liveEmployees = await apiFetch<EmployeeCatalogItem[]>("/employees/catalog");
+
+  if (liveEmployees && liveEmployees.length > 0) {
+    const liveByName = new Map(liveEmployees.map((employee) => [employee.name, employee]));
+
+    return standardEmployeeTemplates.map((template) => {
+      const live = liveByName.get(template.name);
+
+      return live ?? {
+        id: template.id,
+        name: template.name,
+        role: template.role,
+        description: template.description,
+        defaultModel: template.defaultModel
+      };
+    });
+  }
+
+  return demoEmployees.map((employee) => ({
+    id: employee.id,
+    name: employee.name,
+    role: employee.role,
+    description: employee.description,
+    defaultModel: employee.defaultModel
+  }));
 }
 
 export async function getProjectEmployees(

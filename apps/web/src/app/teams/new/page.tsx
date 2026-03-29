@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getEmployeeCatalog } from "@/lib/api";
-import { createTeamAction } from "./actions";
+import { getEmployeeCatalog, getProjects } from "@/lib/api";
+import { TeamSetupForm } from "./team-setup-form";
 
 type TeamNewPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -19,181 +19,334 @@ function normalizeSelectedIds(raw: string | string[] | undefined): string[] {
 }
 
 export default async function TeamNewPage({ searchParams }: TeamNewPageProps) {
-  const employees = await getEmployeeCatalog();
+  const [employees, projects] = await Promise.all([getEmployeeCatalog(), getProjects()]);
   const params = await searchParams;
   const preselectedIds = new Set(normalizeSelectedIds(params.employeeIds));
 
   return (
-    <main style={pageStyle}>
-      <section style={shellStyle}>
-        <Link href="/" style={backLinkStyle}>
-          返回员工库首页
+    <main className="team-setup-shell">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .team-setup-shell {
+              min-height: 100vh;
+              background:
+                radial-gradient(circle at 20% 0%, #121d35 0%, #060a14 50%, #02040a 100%);
+              color: #e9f3ff;
+              font-family: "Space Grotesk", "Noto Sans SC", "PingFang SC", sans-serif;
+              padding: 10px 14px 12px;
+              box-sizing: border-box;
+              overflow: hidden;
+            }
+            .team-setup-page {
+              width: min(1920px, calc(100vw - 32px));
+              margin: 0 auto;
+              height: calc(100vh - 22px);
+              display: grid;
+              grid-template-rows: auto 1fr;
+              gap: 8px;
+            }
+            .team-setup-back {
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              color: #4dd0ff;
+              text-decoration: none;
+              font-size: 0.82rem;
+              margin: 0 0 0 6px;
+            }
+            .team-panel {
+              border-radius: 18px;
+              border: 1px solid rgba(77, 208, 255, 0.26);
+              background:
+                radial-gradient(circle at 50% 0%, rgba(35, 71, 112, 0.18), transparent 40%),
+                rgba(9, 18, 35, 0.95);
+              box-shadow: 0 26px 60px rgba(0, 0, 0, 0.34);
+              padding: 18px 24px 18px;
+              min-height: 0;
+              overflow: hidden;
+              display: grid;
+              align-content: start;
+            }
+            .team-panel h1 {
+              margin: 0;
+              font-size: clamp(1.14rem, 1.6vw, 1.52rem);
+              letter-spacing: 0.04em;
+              color: #39d0ff;
+            }
+            .team-panel p {
+              margin: 8px 0 0;
+              max-width: 1100px;
+              color: #93a8c7;
+              font-size: 0.68rem;
+              line-height: 1.45;
+            }
+            .team-form {
+              display: grid;
+              gap: 10px;
+              margin-top: 12px;
+              min-height: 0;
+              height: 100%;
+              grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+            }
+            .team-form-select {
+              height: auto;
+              grid-template-rows: auto auto auto;
+              align-content: start;
+            }
+            .team-form > div {
+              min-height: 0;
+            }
+            .team-name-block {
+              min-height: auto !important;
+            }
+            .team-employee-section {
+              min-height: 0;
+              display: grid;
+              grid-template-rows: auto minmax(0, 1fr);
+              gap: 8px;
+            }
+            .mode-row {
+              display: inline-flex;
+              gap: 18px;
+              flex-wrap: wrap;
+              align-items: center;
+              justify-content: flex-start;
+            }
+            .mode-option {
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              color: #cddcf3;
+              font-size: 0.8rem;
+              font-weight: 700;
+              width: fit-content;
+              white-space: nowrap;
+            }
+            .mode-option input {
+              width: 16px;
+              height: 16px;
+              accent-color: #3ad0ff;
+            }
+            .section-divider {
+              height: 1px;
+              background: rgba(77, 208, 255, 0.24);
+            }
+            .section-title {
+              color: #39d0ff;
+              font-size: 0.88rem;
+              font-weight: 800;
+              margin-bottom: 8px;
+            }
+            .field-label {
+              display: block;
+              margin-bottom: 6px;
+              color: #39d0ff;
+              font-size: 0.76rem;
+              font-weight: 800;
+            }
+            .field-input,
+            .field-select {
+              width: 100%;
+              min-height: 52px;
+              padding: 0 14px;
+              border-radius: 12px;
+              border: 1px solid rgba(77, 208, 255, 0.28);
+              background: rgba(12, 22, 40, 0.92);
+              color: #eff7ff;
+              font-size: 0.96rem;
+              outline: none;
+              box-shadow: inset 0 0 0 1px rgba(77, 208, 255, 0.04);
+            }
+            .field-select {
+              min-height: 50px;
+              font-size: 0.92rem;
+            }
+            .choose-copy {
+              color: #39d0ff;
+              font-size: 0.8rem;
+              font-weight: 800;
+            }
+            .employee-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+              gap: 10px;
+              height: 100%;
+              min-height: 0;
+              overflow-y: auto;
+              overflow-x: hidden;
+              padding: 4px 4px 0 0;
+              scrollbar-width: thin;
+              scrollbar-color: rgba(77, 208, 255, 0.55) rgba(5, 12, 24, 0.72);
+              align-content: start;
+            }
+            .employee-grid::-webkit-scrollbar {
+              width: 10px;
+            }
+            .employee-grid::-webkit-scrollbar-track {
+              background: rgba(5, 12, 24, 0.72);
+              border-radius: 999px;
+            }
+            .employee-grid::-webkit-scrollbar-thumb {
+              background: rgba(77, 208, 255, 0.45);
+              border-radius: 999px;
+            }
+            .employee-card {
+              display: block;
+              position: relative;
+              cursor: pointer;
+            }
+            .employee-card input {
+              position: absolute;
+              opacity: 0;
+              inset: 0;
+              pointer-events: none;
+            }
+            .employee-card-box {
+              min-height: 74px;
+              border-radius: 14px;
+              border: 1px solid rgba(77, 208, 255, 0.28);
+              background: linear-gradient(180deg, rgba(8, 20, 37, 0.92), rgba(7, 18, 32, 0.96));
+              box-shadow: inset 0 0 0 1px rgba(77, 208, 255, 0.05);
+              padding: 10px 8px;
+              display: grid;
+              justify-items: center;
+              align-content: center;
+              gap: 4px;
+              text-align: center;
+              transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+            }
+            .employee-card:hover .employee-card-box {
+              transform: translateY(-2px);
+              border-color: rgba(77, 208, 255, 0.55);
+            }
+            .employee-card:has(input:checked) .employee-card-box {
+              border-color: rgba(77, 208, 255, 0.82);
+              box-shadow: 0 0 0 1px rgba(77, 208, 255, 0.14), 0 10px 22px rgba(17, 75, 111, 0.28);
+              background: linear-gradient(180deg, rgba(9, 26, 46, 0.96), rgba(8, 20, 36, 0.98));
+            }
+            .employee-avatar {
+              width: 32px;
+              height: 32px;
+              border-radius: 10px;
+              border: 1px solid rgba(77, 208, 255, 0.32);
+              background: rgba(255,255,255,0.03);
+              padding: 2px;
+              object-fit: cover;
+            }
+            .employee-name {
+              color: #dff5ff;
+              font-size: 0.68rem;
+              font-weight: 700;
+              line-height: 1.2;
+            }
+            .employee-role {
+              color: #86b7cc;
+              font-size: 0.58rem;
+            }
+            .submit-row {
+              display: flex;
+              justify-content: flex-end;
+              margin-top: 0;
+              padding-top: 2px;
+              min-height: auto !important;
+            }
+            .submit-button {
+              min-width: 92px;
+              height: 48px;
+              padding: 0 18px;
+              border: 0;
+              border-radius: 10px;
+              background: linear-gradient(180deg, #4dd0ff, #35c5fb);
+              color: #03131f;
+              font-size: 1rem;
+              font-weight: 800;
+              cursor: pointer;
+              box-shadow: 0 12px 24px rgba(38, 164, 213, 0.22);
+            }
+            .select-team-block {
+              display: grid;
+              gap: 14px;
+            }
+            @media (max-width: 1100px) {
+              .team-panel {
+                padding: 16px 18px 16px;
+              }
+              .employee-grid {
+                grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+                gap: 10px;
+              }
+            }
+            @media (max-width: 780px) {
+              .team-setup-shell {
+                padding: 8px 8px 10px;
+                overflow: auto;
+              }
+              .team-setup-page {
+                width: calc(100vw - 20px);
+                height: auto;
+                display: block;
+              }
+              .team-panel {
+                padding: 18px 14px 20px;
+                overflow: visible;
+                display: block;
+              }
+              .team-form {
+                height: auto;
+                display: grid;
+                grid-template-rows: none;
+              }
+              .team-employee-section {
+                display: block;
+              }
+              .mode-row {
+                gap: 12px;
+              }
+              .field-input,
+              .field-select {
+                min-height: 48px;
+                font-size: 0.92rem;
+              }
+              .employee-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                height: auto;
+              }
+              .submit-button {
+                width: 100%;
+                min-width: 0;
+                height: 44px;
+                font-size: 0.96rem;
+              }
+            }
+            @media (max-width: 520px) {
+              .employee-grid {
+                grid-template-columns: 1fr 1fr;
+              }
+              .team-panel h1 {
+                line-height: 1.1;
+              }
+            }
+          `
+        }}
+      />
+      <div className="team-setup-page">
+        <Link href="/" className="team-setup-back">
+          ← 返回员工库首页
         </Link>
 
-        <header style={heroStyle}>
-          <div style={eyebrowStyle}>STEP 1 / 创建团队</div>
-          <h1 style={titleStyle}>先给团队起名，再确认第一批成员</h1>
-          <p style={descriptionStyle}>
-            团队是工作台的组织单元。你可以从首页预选员工带进来，也可以先建团队，下一步再调整成员。
+        <section className="team-panel">
+          <h1>创建 or 选择团队</h1>
+          <p>
+            创建新团队并选择成员，或选择已有团队，然后进行技能编排。技能来源：ClawHub。
           </p>
-        </header>
-
-        <form action={createTeamAction} style={panelStyle}>
-          <div style={{ display: "grid", gap: 12 }}>
-            <label style={labelStyle} htmlFor="team-name">
-              团队名称
-            </label>
-            <input
-              id="team-name"
-              name="name"
-              defaultValue={preselectedIds.size > 0 ? "我的数字员工团队" : ""}
-              placeholder="例如：法律顾问团队 / 小红书增长团队"
-              style={inputStyle}
-              required
-            />
-          </div>
-
-          <div style={{ display: "grid", gap: 14 }}>
-            <div style={labelStyle}>预选员工</div>
-            <div style={memberGridStyle}>
-              {employees.map((employee) => {
-                const checked = preselectedIds.has(employee.id);
-
-                return (
-                  <label key={employee.id} style={memberCardStyle(checked)}>
-                    <input
-                      type="checkbox"
-                      name="employeeId"
-                      value={employee.id}
-                      defaultChecked={checked}
-                      style={{ marginTop: 3 }}
-                    />
-                    <div style={{ display: "grid", gap: 6 }}>
-                      <strong style={{ color: "#effbff" }}>{employee.name}</strong>
-                      <div style={{ color: "#4dd0ff", fontSize: 13 }}>{employee.role}</div>
-                      <div style={{ color: "#94b8c9", fontSize: 13, lineHeight: 1.6 }}>
-                        {employee.description}
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-            <div style={{ color: "#8cb4c8", fontSize: 14 }}>
-              创建后会进入成员确认页，你还可以继续添加或移除员工。
-            </div>
-            <button type="submit" style={primaryButtonStyle}>
-              创建团队并继续
-            </button>
-          </div>
-        </form>
-      </section>
+          <TeamSetupForm
+            employees={employees}
+            projects={projects}
+            preselectedEmployeeIds={[...preselectedIds]}
+          />
+        </section>
+      </div>
     </main>
   );
-}
-
-const pageStyle: React.CSSProperties = {
-  minHeight: "100vh",
-  padding: "28px 24px 56px",
-  background:
-    "radial-gradient(circle at top, rgba(39,123,167,0.18), transparent 30%), #07131f",
-  color: "#f6fbff",
-  fontFamily:
-    '"SF Mono", "Roboto Mono", "IBM Plex Sans SC", ui-sans-serif, sans-serif'
-};
-
-const shellStyle: React.CSSProperties = {
-  maxWidth: 1200,
-  margin: "0 auto",
-  display: "grid",
-  gap: 22
-};
-
-const heroStyle: React.CSSProperties = {
-  borderRadius: 28,
-  padding: 28,
-  border: "1px solid rgba(77, 208, 255, 0.18)",
-  background: "rgba(7, 21, 38, 0.9)"
-};
-
-const panelStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 24,
-  borderRadius: 24,
-  padding: 24,
-  border: "1px solid rgba(77, 208, 255, 0.14)",
-  background: "rgba(7, 21, 38, 0.92)"
-};
-
-const memberGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-  gap: 16
-};
-
-const labelStyle: React.CSSProperties = {
-  color: "#4dd0ff",
-  fontWeight: 800,
-  fontSize: 14
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  borderRadius: 16,
-  border: "1px solid rgba(77, 208, 255, 0.16)",
-  background: "rgba(255,255,255,0.03)",
-  color: "#f5fbff",
-  padding: "14px 16px",
-  outline: "none"
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-  height: 44,
-  border: 0,
-  borderRadius: 14,
-  background: "#4dd0ff",
-  color: "#03131f",
-  fontWeight: 700,
-  padding: "0 18px",
-  cursor: "pointer"
-};
-
-const backLinkStyle: React.CSSProperties = {
-  color: "#4dd0ff",
-  textDecoration: "none"
-};
-
-const eyebrowStyle: React.CSSProperties = {
-  color: "#4dd0ff",
-  marginBottom: 10,
-  fontWeight: 700
-};
-
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 42
-};
-
-const descriptionStyle: React.CSSProperties = {
-  color: "#95b4c7",
-  maxWidth: 820
-};
-
-function memberCardStyle(checked: boolean): React.CSSProperties {
-  return {
-    display: "grid",
-    gridTemplateColumns: "18px 1fr",
-    gap: 12,
-    padding: 18,
-    borderRadius: 18,
-    border: checked
-      ? "1px solid rgba(77, 208, 255, 0.42)"
-      : "1px solid rgba(77, 208, 255, 0.14)",
-    background: checked
-      ? "linear-gradient(180deg, rgba(8,26,48,0.95), rgba(6,22,40,0.95))"
-      : "rgba(255,255,255,0.02)"
-  };
 }

@@ -8,6 +8,7 @@ import type {
   SkillCatalogItem,
   TaskSummary
 } from "@openswarm/shared";
+import { standardEmployeeTemplates } from "@openswarm/shared";
 
 export const demoProjects: ProjectSummary[] = [
   {
@@ -28,35 +29,16 @@ export const demoProjects: ProjectSummary[] = [
   }
 ];
 
-export const demoEmployees: ProjectEmployeeItem[] = [
-  {
-    id: "employee_xhs_ops",
-    name: "小红书运营",
-    role: "运营",
-    description: "先澄清目标，再执行动作。",
-    defaultModel: "gpt-5.4",
-    selected: true,
-    sortOrder: 0
-  },
-  {
-    id: "employee_crawler",
-    name: "爬虫专家",
-    role: "研究",
-    description: "优先补齐外部信息和案例证据。",
-    defaultModel: "gpt-5.4",
-    selected: true,
-    sortOrder: 1
-  },
-  {
-    id: "employee_backend",
-    name: "后端工程师",
-    role: "工程",
-    description: "把执行路径做稳定，把状态做清晰。",
-    defaultModel: "gpt-5.4",
-    selected: false,
-    sortOrder: null
-  }
-] ;
+export const demoEmployees: ProjectEmployeeItem[] = standardEmployeeTemplates.map((employee) => ({
+  id: employee.id,
+  name: employee.name,
+  role: employee.role,
+  description: employee.description,
+  defaultModel: employee.defaultModel,
+  selected: employee.id === "employee_18" || employee.id === "employee_63",
+  sortOrder:
+    employee.id === "employee_18" ? 0 : employee.id === "employee_63" ? 1 : null
+}));
 
 export const demoSkills: SkillCatalogItem[] = [
   {

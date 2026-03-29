@@ -1,4 +1,5 @@
 import { prisma } from "../src";
+import { standardEmployeeTemplates } from "@openswarm/shared";
 
 async function main() {
   const tenant = await prisma.tenant.upsert({
@@ -21,32 +22,14 @@ async function main() {
     }
   });
 
-  const employees = [
-    {
-      id: "employee_xhs_ops",
-      name: "小红书运营",
-      role: "运营",
-      description: "先澄清目标，再执行动作。",
-      agentName: "xhs_ops",
-      modelName: "gpt-5.4"
-    },
-    {
-      id: "employee_crawler",
-      name: "爬虫专家",
-      role: "研究",
-      description: "优先补齐外部信息和案例证据。",
-      agentName: "crawler_expert",
-      modelName: "gpt-5.4"
-    },
-    {
-      id: "employee_backend",
-      name: "后端工程师",
-      role: "工程",
-      description: "把执行路径做稳定，把状态做清晰。",
-      agentName: "backend_engineer",
-      modelName: "gpt-5.4"
-    }
-  ];
+  const employees = standardEmployeeTemplates.map((employee) => ({
+    id: employee.id,
+    name: employee.name,
+    role: employee.role,
+    description: employee.description,
+    agentName: employee.agentName,
+    modelName: employee.defaultModel
+  }));
 
   for (const employee of employees) {
     await prisma.employee.upsert({
@@ -108,13 +91,13 @@ async function main() {
     where: {
       projectId_employeeId: {
         projectId: project.id,
-        employeeId: "employee_xhs_ops"
+        employeeId: "employee_18"
       }
     },
     update: { sortOrder: 0 },
     create: {
       projectId: project.id,
-      employeeId: "employee_xhs_ops",
+      employeeId: "employee_18",
       sortOrder: 0
     }
   });
@@ -123,13 +106,13 @@ async function main() {
     where: {
       projectId_employeeId: {
         projectId: project.id,
-        employeeId: "employee_crawler"
+        employeeId: "employee_63"
       }
     },
     update: { sortOrder: 1 },
     create: {
       projectId: project.id,
-      employeeId: "employee_crawler",
+      employeeId: "employee_63",
       sortOrder: 1
     }
   });
@@ -142,22 +125,22 @@ async function main() {
     data: [
       {
         projectId: project.id,
-        employeeId: "employee_xhs_ops",
+        employeeId: "employee_18",
         skillId: "summarize"
       },
       {
         projectId: project.id,
-        employeeId: "employee_crawler",
+        employeeId: "employee_63",
         skillId: "summarize"
       },
       {
         projectId: project.id,
-        employeeId: "employee_crawler",
+        employeeId: "employee_63",
         skillId: "agent-browser"
       },
       {
         projectId: project.id,
-        employeeId: "employee_crawler",
+        employeeId: "employee_63",
         skillId: "filesystem"
       }
     ]

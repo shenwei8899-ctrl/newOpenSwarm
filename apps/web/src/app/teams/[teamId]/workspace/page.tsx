@@ -76,16 +76,18 @@ export default async function TeamWorkspacePage({ params }: TeamWorkspacePagePro
 function OverviewCard(props: { title: string; value: string; note: string }) {
   return (
     <div style={overviewCardStyle}>
-      <div style={{ color: "#73dcff", fontSize: 12, letterSpacing: 1.2 }}>{props.title}</div>
-      <div style={{ fontSize: 26, fontWeight: 900, color: "#effbff" }}>{props.value}</div>
-      <div style={{ color: "#95b4c7", fontSize: 13 }}>{props.note}</div>
+      <div style={{ color: "#73dcff", fontSize: 11, letterSpacing: 1 }}>{props.title}</div>
+      <div style={{ fontSize: 22, fontWeight: 900, color: "#effbff", lineHeight: 1.1 }}>
+        {props.value}
+      </div>
+      <div style={{ color: "#95b4c7", fontSize: 12 }}>{props.note}</div>
     </div>
   );
 }
 
 const pageStyle = {
   minHeight: "100vh",
-  padding: "28px 24px 56px",
+  padding: "16px 18px 24px",
   background:
     "radial-gradient(circle at top, rgba(39,123,167,0.18), transparent 30%), #07131f",
   color: "#f6fbff",
@@ -97,26 +99,26 @@ const shellStyle = {
   maxWidth: 1280,
   margin: "0 auto",
   display: "grid",
-  gap: 22
+  gap: 14
 } satisfies React.CSSProperties;
 
 const heroStyle = {
-  borderRadius: 28,
-  padding: 28,
+  borderRadius: 22,
+  padding: "18px 22px",
   border: "1px solid rgba(77, 208, 255, 0.18)",
   background: "rgba(7, 21, 38, 0.9)"
 } satisfies React.CSSProperties;
 
 const overviewGridStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: 16
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 12
 } satisfies React.CSSProperties;
 
 const overviewCardStyle = {
-  minHeight: 120,
-  borderRadius: 18,
-  padding: 18,
+  minHeight: 86,
+  borderRadius: 16,
+  padding: "14px 16px",
   border: "1px solid rgba(77, 208, 255, 0.14)",
   background: "rgba(255,255,255,0.02)",
   display: "grid",
@@ -125,62 +127,77 @@ const overviewCardStyle = {
 
 const panelGridStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-  gap: 20
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 14
 } satisfies React.CSSProperties;
 
 const moduleCardStyle = {
-  borderRadius: 22,
-  padding: 22,
+  minHeight: 260,
+  borderRadius: 18,
+  padding: 18,
   border: "1px solid rgba(77, 208, 255, 0.14)",
   background: "rgba(7, 21, 38, 0.92)",
   display: "grid",
-  gap: 14
+  gap: 10,
+  alignContent: "start"
 } satisfies React.CSSProperties;
 
 const moduleTextStyle = {
   color: "#95b4c7",
-  lineHeight: 1.7,
+  lineHeight: 1.55,
+  fontSize: 14,
   margin: 0
 } satisfies React.CSSProperties;
 
 const metaStyle = {
   color: "#d7eef7",
-  lineHeight: 1.7,
-  fontSize: 14,
-  minHeight: 72
+  lineHeight: 1.55,
+  fontSize: 13,
+  minHeight: 56,
+  display: "-webkit-box",
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden"
 } satisfies React.CSSProperties;
 
 const primaryLinkStyle = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  height: 44,
-  padding: "0 18px",
-  borderRadius: 14,
+  height: 38,
+  padding: "0 16px",
+  borderRadius: 12,
   textDecoration: "none",
   color: "#03131f",
   background: "#4dd0ff",
-  fontWeight: 700
+  fontWeight: 700,
+  fontSize: 14,
+  justifySelf: "start"
 } satisfies React.CSSProperties;
 
 const backLinkStyle = {
   color: "#4dd0ff",
-  textDecoration: "none"
+  textDecoration: "none",
+  fontSize: 14
 } satisfies React.CSSProperties;
 
 const eyebrowStyle = {
   color: "#4dd0ff",
-  marginBottom: 10,
-  fontWeight: 700
+  marginBottom: 6,
+  fontWeight: 700,
+  fontSize: 13
 } satisfies React.CSSProperties;
 
 const titleStyle = {
   margin: 0,
-  fontSize: 42
+  fontSize: 28,
+  lineHeight: 1.1
 } satisfies React.CSSProperties;
 
 const descriptionStyle = {
   color: "#95b4c7",
-  maxWidth: 820
+  maxWidth: 820,
+  margin: "10px 0 0",
+  fontSize: 14,
+  lineHeight: 1.55
 } satisfies React.CSSProperties;
