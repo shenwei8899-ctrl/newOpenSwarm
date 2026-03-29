@@ -34,6 +34,31 @@ export type SkillCatalogItem = {
   source: string;
 };
 
+export type ModelProviderId = "codex" | "openai" | "moonshot" | "deepseek";
+
+export type ModelProviderOption = {
+  id: ModelProviderId;
+  label: string;
+  models: string[];
+  keyLabel: string | null;
+  keyHint: string | null;
+};
+
+export type ModelSettingsState = {
+  provider: ModelProviderId;
+  model: string;
+  hasApiKey: boolean;
+  keyLabel: string | null;
+  keyHint: string | null;
+  options: ModelProviderOption[];
+};
+
+export type UpdateModelSettingsInput = {
+  provider: ModelProviderId;
+  model: string;
+  apiKey?: string | null;
+};
+
 export type ProjectDetail = {
   id: string;
   name: string;

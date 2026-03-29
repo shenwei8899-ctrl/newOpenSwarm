@@ -492,6 +492,7 @@ export default async function HomePage() {
           <div className="home-brand">OpenSwarm</div>
           <div className="home-links">
             <Link href="/">数字员工</Link>
+            <Link href="/config.html">模型配置</Link>
             <Link href="/skills.html">技能库</Link>
             <Link href="/teams">
               我的团队

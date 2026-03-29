@@ -5,6 +5,7 @@ import { EmployeesModule } from "./employees/employees.module";
 import { SkillsModule } from "./skills/skills.module";
 import { DiscussionsModule } from "./discussions/discussions.module";
 import { TasksModule } from "./tasks/tasks.module";
+import { SettingsModule } from "./settings/settings.module";
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { TasksModule } from "./tasks/tasks.module";
     EmployeesModule,
     SkillsModule,
     DiscussionsModule,
-    TasksModule
+    TasksModule,
+    SettingsModule
   ],
   controllers: [HealthController]
 })

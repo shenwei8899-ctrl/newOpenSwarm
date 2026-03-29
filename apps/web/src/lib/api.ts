@@ -4,6 +4,7 @@ import type {
   DiscussionMessageItem,
   DiscussionSessionSummary,
   EmployeeCatalogItem,
+  ModelSettingsState,
   ProjectDetail,
   ProjectEmployeeItem,
   ProjectSkillAssignmentsResponse,
@@ -129,5 +130,49 @@ export async function getProjectTasks(projectId: string): Promise<TaskSummary[]>
 export async function getTaskArtifacts(taskId: string): Promise<ArtifactSummary[]> {
   return (
     (await apiFetch<ArtifactSummary[]>(`/tasks/${taskId}/artifacts`)) ?? demoArtifacts
+  );
+}
+
+export async function getModelSettings(): Promise<ModelSettingsState> {
+  const options: ModelSettingsState["options"] = [
+    {
+      id: "codex",
+      label: "Codex CLI",
+      models: ["gpt-5.4"],
+      keyLabel: null,
+      keyHint: "使用本机 Codex 登录态，不需要额外填写 API Key。"
+    },
+    {
+      id: "openai",
+      label: "OpenAI",
+      models: ["gpt-4.1", "gpt-4o", "gpt-5"],
+      keyLabel: "OpenAI API Key（必填）",
+      keyHint: "从 OpenAI 平台控制台获取，留空则不修改当前已保存的 Key。"
+    },
+    {
+      id: "moonshot",
+      label: "Moonshot Kimi",
+      models: ["kimi-k2.5", "moonshot-v1-8k"],
+      keyLabel: "Moonshot Kimi API Key（必填）",
+      keyHint: "从 Moonshot Kimi 控制台获取，留空则不修改当前已保存的 Key。"
+    },
+    {
+      id: "deepseek",
+      label: "DeepSeek",
+      models: ["deepseek-chat", "deepseek-reasoner"],
+      keyLabel: "DeepSeek API Key（必填）",
+      keyHint: "从 DeepSeek 控制台获取，留空则不修改当前已保存的 Key。"
+    }
+  ];
+
+  return (
+    (await apiFetch<ModelSettingsState>("/settings/model")) ?? {
+      provider: "codex",
+      model: "gpt-5.4",
+      hasApiKey: false,
+      keyLabel: null,
+      keyHint: "使用本机 Codex 登录态，不需要额外填写 API Key。",
+      options
+    }
   );
 }
