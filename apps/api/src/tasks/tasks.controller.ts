@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Redirect } from "@nestjs/common";
 import type {
   ArtifactSummary,
   AssignTaskInput,
@@ -54,5 +54,29 @@ export class TasksController {
     @Param("taskId") taskId: string
   ): Promise<ArtifactSummary[]> {
     return this.tasksService.listArtifacts(taskId);
+  }
+
+  @Get("tasks/:taskId/artifacts/:artifactId/open")
+  @Redirect(undefined, 302)
+  async openArtifact(
+    @Param("taskId") taskId: string,
+    @Param("artifactId") artifactId: string
+  ): Promise<{ url: string }> {
+    return {
+      url: await this.tasksService.getArtifactAccessUrl(taskId, artifactId)
+    };
+  }
+
+  @Get("tasks/:taskId/artifacts/:artifactId/download")
+  @Redirect(undefined, 302)
+  async downloadArtifact(
+    @Param("taskId") taskId: string,
+    @Param("artifactId") artifactId: string
+  ): Promise<{ url: string }> {
+    return {
+      url: await this.tasksService.getArtifactAccessUrl(taskId, artifactId, {
+        download: true
+      })
+    };
   }
 }

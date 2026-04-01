@@ -201,4 +201,29 @@ export class TasksRepo {
       createdAt: artifact.createdAt.toISOString()
     }));
   }
+
+  async getArtifact(taskId: string, artifactId: string): Promise<ArtifactSummary | null> {
+    const artifact = await prisma.artifact.findFirst({
+      where: {
+        id: artifactId,
+        taskId
+      }
+    });
+
+    if (!artifact) {
+      return null;
+    }
+
+    return {
+      id: artifact.id,
+      taskId: artifact.taskId,
+      runtimeJobId: artifact.runtimeJobId,
+      threadId: artifact.threadId,
+      virtualPath: artifact.virtualPath,
+      filename: artifact.filename,
+      mimeType: artifact.mimeType ?? null,
+      sizeBytes: artifact.sizeBytes?.toString() ?? null,
+      createdAt: artifact.createdAt.toISOString()
+    };
+  }
 }

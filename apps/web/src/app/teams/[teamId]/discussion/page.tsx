@@ -21,10 +21,33 @@ function senderLabel(senderType: string, senderId: string | null) {
   return senderId ?? senderType;
 }
 
+function getEmployeeAvatar(employeeId: string, index: number) {
+  const avatarMap: Record<string, string> = {
+    employee_xhs_ops: "/assets/avatar/avatar-01.svg",
+    employee_crawler: "/assets/avatar/researcher-01.svg",
+    employee_backend: "/assets/avatar/professor-01.svg"
+  };
+
+  if (avatarMap[employeeId]) {
+    return avatarMap[employeeId];
+  }
+
+  const fallback = [
+    "/assets/avatar/avatar-02.svg",
+    "/assets/avatar/avatar-03.svg",
+    "/assets/avatar/avatar-04.svg",
+    "/assets/avatar/avatar-05.svg"
+  ];
+
+  return fallback[index % fallback.length];
+}
+
 export default async function TeamDiscussionPage({ params }: TeamDiscussionPageProps) {
   const { teamId } = await params;
   const employees = await getProjectEmployees(teamId);
   const selectedEmployees = employees.filter((employee) => employee.selected);
+  const employeeNameById = new Map(selectedEmployees.map((employee) => [employee.id, employee.name]));
+  const employeeIndexById = new Map(selectedEmployees.map((employee, index) => [employee.id, index]));
   const discussions = await getProjectDiscussions(teamId);
   const activeDiscussion = discussions[0] ?? null;
   const messages = activeDiscussion ? await getDiscussionMessages(activeDiscussion.id) : [];
@@ -145,12 +168,27 @@ export default async function TeamDiscussionPage({ params }: TeamDiscussionPageP
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
+                      alignItems: "center",
                       gap: 12,
                       marginBottom: 10,
                       color: "#4dd0ff"
                     }}
                   >
-                    <strong>{senderLabel(message.senderType, message.senderId)}</strong>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {message.senderType === "employee" ? (
+                        <div style={employeeAvatarStyle}>
+                          <img
+                            src={getEmployeeAvatar(
+                              message.senderId ?? "employee",
+                              message.senderId ? employeeIndexById.get(message.senderId) ?? 0 : 0
+                            )}
+                            alt={message.senderId ? employeeNameById.get(message.senderId) ?? "员工头像" : "员工头像"}
+                            style={employeeAvatarImageStyle}
+                          />
+                        </div>
+                      ) : null}
+                      <strong>{senderLabel(message.senderType, message.senderId)}</strong>
+                    </div>
                     <span>Round {message.roundNo}</span>
                   </div>
                   <p style={{ margin: 0, color: "#eff9ff", lineHeight: 1.7 }}>{message.content}</p>
@@ -202,4 +240,23 @@ const secondaryButtonStyle: React.CSSProperties = {
   background: "transparent",
   color: "#4dd0ff",
   border: "1px solid rgba(77, 208, 255, 0.22)"
+};
+
+const employeeAvatarStyle: React.CSSProperties = {
+  width: 28,
+  height: 28,
+  borderRadius: "50%",
+  background: "#dbe7f2",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  flexShrink: 0
+};
+
+const employeeAvatarImageStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block"
 };

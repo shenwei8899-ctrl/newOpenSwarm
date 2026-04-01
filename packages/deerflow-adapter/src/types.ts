@@ -2,6 +2,8 @@ export type DeerFlowRuntimeConfig = {
   gatewayBaseUrl: string;
   langgraphBaseUrl: string;
   assistantId?: string;
+  runTimeoutMs?: number;
+  recursionLimit?: number;
 };
 
 export type DeerFlowAgentRunInput = {

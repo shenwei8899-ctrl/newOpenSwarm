@@ -39,6 +39,7 @@ model Project {
   employeeSkills  EmployeeSkill[]
   discussions     DiscussionSession[]
   tasks           Task[]
+  autonomyRuns    AutonomyRun[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -61,6 +62,10 @@ model Employee {
   discussionMembers   DiscussionParticipant[]
   taskAssignments     TaskAssignment[]
   runtimeJobs         RuntimeJob[]
+  autonomyInitialRuns AutonomyRun[]            @relation("AutonomyInitialEmployee")
+  autonomyCurrentRuns AutonomyRun[]            @relation("AutonomyCurrentEmployee")
+  autonomyOwnedSteps  AutonomyStep[]           @relation("AutonomyStepOwner")
+  autonomyHandoffs    AutonomyStep[]           @relation("AutonomyStepHandoff")
   createdAt           DateTime                 @default(now())
 
   @@index([tenantId])
@@ -114,6 +119,7 @@ model DiscussionSession {
   participants  DiscussionParticipant[]
   messages      DiscussionMessage[]
   tasks         Task[]
+  autonomyRuns  AutonomyRun[]
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 
@@ -160,6 +166,7 @@ model Task {
   assignments        TaskAssignment[]
   runtimeJobs        RuntimeJob[]
   artifacts          Artifact[]
+  autonomyRuns       AutonomyRun[]
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
@@ -214,4 +221,77 @@ model Artifact {
 
   @@index([taskId])
   @@index([runtimeJobId])
+}
+
+model AutonomyRun {
+  id                     String            @id @default(cuid())
+  tenantId               String
+  projectId              String
+  sourceDiscussionId     String?
+  sourceTaskId           String?
+  title                  String
+  goal                   String
+  status                 String            @default("draft")
+  initialEmployeeId      String
+  currentEmployeeId      String?
+  participantEmployeeIds Json              @default("[]")
+  plannerOutput          Json              @default("{}")
+  summary                String?
+  lastError              String?
+  maxSteps               Int               @default(8)
+  maxRelayPerEmployee    Int               @default(2)
+  project                Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceDiscussion       DiscussionSession? @relation(fields: [sourceDiscussionId], references: [id], onDelete: SetNull)
+  sourceTask             Task?             @relation(fields: [sourceTaskId], references: [id], onDelete: SetNull)
+  initialEmployee        Employee          @relation("AutonomyInitialEmployee", fields: [initialEmployeeId], references: [id], onDelete: Restrict)
+  currentEmployee        Employee?         @relation("AutonomyCurrentEmployee", fields: [currentEmployeeId], references: [id], onDelete: SetNull)
+  steps                  AutonomyStep[]
+  events                 AutonomyEvent[]
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  @@index([tenantId, status])
+  @@index([projectId, status])
+}
+
+model AutonomyStep {
+  id              String       @id @default(cuid())
+  runId           String
+  stepKey         String
+  title           String
+  status          String       @default("queued")
+  ownerEmployeeId String
+  dependsOn       Json         @default("[]")
+  goal            String
+  inputContext    Json         @default("{}")
+  outputSummary   String?
+  artifacts       Json         @default("[]")
+  handoffTo       String?
+  handoffMessage  String?
+  runtimeJobId    String?
+  stepIndex       Int
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  run             AutonomyRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  ownerEmployee   Employee     @relation("AutonomyStepOwner", fields: [ownerEmployeeId], references: [id], onDelete: Restrict)
+  nextEmployee    Employee?    @relation("AutonomyStepHandoff", fields: [handoffTo], references: [id], onDelete: SetNull)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([runId, stepIndex])
+  @@index([runId, status])
+}
+
+model AutonomyEvent {
+  id        String      @id @default(cuid())
+  runId     String
+  stepId    String?
+  type      String
+  agentId   String?
+  message   String?
+  metadata  Json        @default("{}")
+  run       AutonomyRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@index([runId, createdAt])
 }

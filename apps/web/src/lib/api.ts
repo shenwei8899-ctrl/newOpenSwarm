@@ -1,4 +1,6 @@
 import type {
+  AutonomyRunDetail,
+  AutonomyRunSummary,
   ArtifactSummary,
   CreateProjectInput,
   DiscussionMessageItem,
@@ -131,6 +133,30 @@ export async function getTaskArtifacts(taskId: string): Promise<ArtifactSummary[
   return (
     (await apiFetch<ArtifactSummary[]>(`/tasks/${taskId}/artifacts`)) ?? demoArtifacts
   );
+}
+
+export async function getProjectAutonomyRuns(
+  projectId: string
+): Promise<AutonomyRunSummary[]> {
+  return (
+    (await apiFetch<AutonomyRunSummary[]>(
+      `/autonomy/task-runs?projectId=${encodeURIComponent(projectId)}`
+    )) ?? []
+  );
+}
+
+export async function getAutonomyRun(
+  runId: string
+): Promise<AutonomyRunDetail | null> {
+  return (await apiFetch<AutonomyRunDetail>(`/autonomy/task-runs/${runId}`)) ?? null;
+}
+
+export function getTaskArtifactOpenUrl(taskId: string, artifactId: string): string {
+  return `${apiBaseUrl}/tasks/${taskId}/artifacts/${artifactId}/open`;
+}
+
+export function getTaskArtifactDownloadUrl(taskId: string, artifactId: string): string {
+  return `${apiBaseUrl}/tasks/${taskId}/artifacts/${artifactId}/download`;
 }
 
 export async function getModelSettings(): Promise<ModelSettingsState> {

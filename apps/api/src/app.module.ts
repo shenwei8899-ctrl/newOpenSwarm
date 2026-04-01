@@ -6,6 +6,7 @@ import { SkillsModule } from "./skills/skills.module";
 import { DiscussionsModule } from "./discussions/discussions.module";
 import { TasksModule } from "./tasks/tasks.module";
 import { SettingsModule } from "./settings/settings.module";
+import { AutonomyModule } from "./autonomy/autonomy.module";
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { SettingsModule } from "./settings/settings.module";
     SkillsModule,
     DiscussionsModule,
     TasksModule,
-    SettingsModule
+    SettingsModule,
+    AutonomyModule
   ],
   controllers: [HealthController]
 })

@@ -126,24 +126,36 @@ export class DeerFlowRuntimeClient {
       metadata: input.metadata
     });
 
-    const result = (await client.runs.wait(
-      threadId,
-      this.config.assistantId ?? "lead_agent",
-      {
-        input: {
-          messages: [
-            {
-              role: "human",
-              content: input.message
-            }
-          ]
-        },
-        context: {
-          ...(input.metadata ?? {}),
-          agent_name: normalizedAgentName
+    const timeoutMs = this.config.runTimeoutMs ?? 90000;
+    const result = (await Promise.race([
+      client.runs.wait(
+        threadId,
+        this.config.assistantId ?? "lead_agent",
+        {
+          input: {
+            messages: [
+              {
+                role: "human",
+                content: input.message
+              }
+            ]
+          },
+          config: {
+            recursion_limit: this.config.recursionLimit ?? 100
+          },
+          context: {
+            thread_id: threadId,
+            ...(input.metadata ?? {}),
+            agent_name: normalizedAgentName
+          }
         }
-      }
-    )) as Record<string, unknown>;
+      ),
+      new Promise((_, reject) =>
+        setTimeout(() => {
+          reject(new Error(`DeerFlow run timed out after ${timeoutMs}ms`));
+        }, timeoutMs)
+      )
+    ])) as Record<string, unknown>;
 
     return {
       threadId,

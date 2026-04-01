@@ -1,5 +1,7 @@
 import Link from "next/link";
 import {
+  getTaskArtifactDownloadUrl,
+  getTaskArtifactOpenUrl,
   getProjectDiscussions,
   getProjectEmployees,
   getProjectTasks,
@@ -235,6 +237,29 @@ export default async function TeamTasksPage({ params }: TeamTasksPageProps) {
                             <div style={{ color: "#7fa8be", fontSize: 13 }}>
                               生成时间：{new Date(artifact.createdAt).toLocaleString("zh-CN")}
                             </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                flexWrap: "wrap",
+                                marginTop: 4
+                              }}
+                            >
+                              <a
+                                href={getTaskArtifactOpenUrl(task.id, artifact.id)}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={artifactActionStyle}
+                              >
+                                打开
+                              </a>
+                              <a
+                                href={getTaskArtifactDownloadUrl(task.id, artifact.id)}
+                                style={artifactActionStyle}
+                              >
+                                下载
+                              </a>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -308,4 +333,20 @@ const secondaryButtonStyle: React.CSSProperties = {
   background: "transparent",
   color: "#4dd0ff",
   border: "1px solid rgba(77, 208, 255, 0.22)"
+};
+
+const artifactActionStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 74,
+  height: 30,
+  padding: "0 10px",
+  borderRadius: 999,
+  textDecoration: "none",
+  color: "#4dd0ff",
+  border: "1px solid rgba(77, 208, 255, 0.2)",
+  background: "rgba(255,255,255,0.02)",
+  fontSize: 12,
+  fontWeight: 700
 };

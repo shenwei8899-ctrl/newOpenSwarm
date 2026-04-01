@@ -159,6 +159,111 @@ export type RunTaskInput = {
   employeeId: string;
 };
 
+export type AutonomyPlanStep = {
+  stepKey: string;
+  title: string;
+  ownerEmployeeId: string;
+  dependsOn: string[];
+  executionMode?: "serial" | "parallel";
+  goal: string;
+  notes?: string | null;
+};
+
+export type AutonomyPlan = {
+  title: string;
+  goal: string;
+  participantEmployeeIds: string[];
+  steps: AutonomyPlanStep[];
+  warnings: string[];
+};
+
+export type AutonomyRunSummary = {
+  id: string;
+  projectId: string;
+  sourceDiscussionId: string | null;
+  sourceTaskId: string | null;
+  title: string;
+  goal: string;
+  status: string;
+  initialEmployeeId: string;
+  currentEmployeeId: string | null;
+  summary: string | null;
+  lastError: string | null;
+  participantEmployeeIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AutonomyStepSummary = {
+  id: string;
+  runId: string;
+  stepKey: string;
+  title: string;
+  status: string;
+  ownerEmployeeId: string;
+  dependsOn: string[];
+  executionMode?: "serial" | "parallel";
+  goal: string;
+  outputSummary: string | null;
+  artifacts: string[];
+  handoffTo: string | null;
+  handoffMessage: string | null;
+  runtimeJobId: string | null;
+  stepIndex: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+};
+
+export type AutonomyEventItem = {
+  id: string;
+  runId: string;
+  stepId: string | null;
+  type: string;
+  agentId: string | null;
+  message: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type AutonomyRunDetail = AutonomyRunSummary & {
+  plannerOutput: AutonomyPlan | null;
+  steps: AutonomyStepSummary[];
+  events: AutonomyEventItem[];
+};
+
+export type GenerateAutonomyPlanInput = {
+  projectId: string;
+  goal: string;
+  sourceDiscussionId?: string | null;
+  participantEmployeeIds?: string[];
+};
+
+export type CreateAutonomyRunInput = {
+  projectId: string;
+  title?: string;
+  goal: string;
+  initialEmployeeId: string;
+  participantEmployeeIds: string[];
+  sourceDiscussionId?: string | null;
+  sourceTaskId?: string | null;
+  plannerOutput?: AutonomyPlan | null;
+};
+
+export type RetryAutonomyStepInput = {
+  stepId: string;
+};
+
+export type ReassignAutonomyStepInput = {
+  stepId: string;
+  employeeId: string;
+};
+
+export type YinReviewDecisionInput = {
+  decision: "continue" | "waiting_user" | "terminate";
+  nextEmployeeId?: string | null;
+  note?: string | null;
+};
+
 export type RuntimeJobSummary = {
   id: string;
   taskId: string;
@@ -186,7 +291,8 @@ export type ArtifactSummary = {
 
 export const queueNames = {
   discussions: "discussions",
-  tasks: "tasks"
+  tasks: "tasks",
+  autonomy: "autonomy"
 } as const;
 
 export type QueueName = (typeof queueNames)[keyof typeof queueNames];
@@ -199,6 +305,11 @@ export type DiscussionRunJob = {
 export type TaskRunJob = {
   taskId: string;
   employeeId: string;
+};
+
+export type AutonomyStepJob = {
+  runId: string;
+  stepId: string;
 };
 
 export type StandardEmployeeTemplate = {
