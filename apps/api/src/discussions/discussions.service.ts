@@ -40,6 +40,10 @@ export class DiscussionsService {
     return this.discussionsRepo.createUserMessage(discussionId, content);
   }
 
+  async deleteDiscussion(discussionId: string): Promise<void> {
+    return this.discussionsRepo.deleteDiscussion(discussionId);
+  }
+
   async enqueueDiscussionRun(
     discussionId: string,
     rounds: number

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
 import { ProjectsService } from "./projects.service";
 import type {
   CreateProjectInput,
@@ -25,6 +25,12 @@ export class ProjectsController {
   @Get(":projectId")
   async getProject(@Param("projectId") projectId: string): Promise<ProjectDetail | null> {
     return this.projectsService.getProject(projectId);
+  }
+
+  @Delete(":projectId")
+  async deleteProject(@Param("projectId") projectId: string): Promise<{ ok: true }> {
+    await this.projectsService.deleteProject(projectId);
+    return { ok: true };
   }
 
   @Get(":projectId/employees")

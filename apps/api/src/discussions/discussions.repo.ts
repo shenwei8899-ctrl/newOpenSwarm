@@ -118,4 +118,10 @@ export class DiscussionsRepo {
       createdAt: message.createdAt.toISOString()
     };
   }
+
+  async deleteDiscussion(discussionId: string): Promise<void> {
+    await prisma.discussionSession.delete({
+      where: { id: discussionId }
+    });
+  }
 }

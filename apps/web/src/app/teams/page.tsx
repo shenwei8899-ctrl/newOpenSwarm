@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getProjects } from "@/lib/api";
+import { deleteTeamAction } from "./actions";
 
 function teamCode(projectId: string) {
   return projectId.replace(/^proj_/, "").slice(0, 12) || projectId.slice(0, 12);
@@ -199,12 +200,14 @@ export default async function TeamsPage() {
               font-weight: 700;
               border: 1px solid rgba(57, 208, 255, 0.24);
               background: rgba(7, 18, 32, 0.88);
+              cursor: pointer;
             }
             .team-button {
               color: #39d0ff;
             }
             .team-button-muted {
               color: #6f8093;
+              font-family: inherit;
             }
             @media (max-width: 900px) {
               .teams-grid {
@@ -270,7 +273,12 @@ export default async function TeamsPage() {
                   <Link href={`/teams/${project.id}/workspace`} className="team-button">
                     进入
                   </Link>
-                  <span className="team-button-muted">删除</span>
+                  <form action={deleteTeamAction}>
+                    <input type="hidden" name="teamId" value={project.id} />
+                    <button type="submit" className="team-button-muted">
+                      删除
+                    </button>
+                  </form>
                 </div>
               </div>
             </article>

@@ -2,16 +2,16 @@ const apiBaseUrl =
   process.env.OPENSWARM_API_BASE_URL ?? "http://127.0.0.1:3001/api";
 
 async function sendToBackend<T>(
-  method: "POST" | "PUT",
+  method: "POST" | "PUT" | "DELETE",
   path: string,
-  body: Record<string, unknown>
+  body?: Record<string, unknown>
 ): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method,
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(body),
+    body: body ? JSON.stringify(body) : undefined,
     cache: "no-store"
   });
 
@@ -35,4 +35,8 @@ export async function putToBackend<T>(
   body: Record<string, unknown>
 ): Promise<T> {
   return sendToBackend("PUT", path, body);
+}
+
+export async function deleteFromBackend<T>(path: string): Promise<T> {
+  return sendToBackend("DELETE", path);
 }

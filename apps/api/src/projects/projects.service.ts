@@ -23,6 +23,10 @@ export class ProjectsService {
     return this.projectsRepo.getProject(projectId);
   }
 
+  async deleteProject(projectId: string): Promise<void> {
+    return this.projectsRepo.deleteProject(projectId);
+  }
+
   async listProjectEmployees(projectId: string): Promise<ProjectEmployeeItem[]> {
     return this.projectsRepo.listProjectEmployees(projectId);
   }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LiveRefresh } from "@/components/live-refresh";
 import {
   getTaskArtifactDownloadUrl,
   getTaskArtifactOpenUrl,
@@ -24,6 +25,12 @@ export default async function TeamTasksPage({ params }: TeamTasksPageProps) {
     discussions.map((discussion) => [discussion.id, discussion.title || "未命名讨论"])
   );
   const tasks = await getProjectTasks(teamId);
+  const shouldAutoRefresh = tasks.some(
+    (task) =>
+      task.status === "queued" ||
+      task.status === "running" ||
+      task.runtimeJobs.some((job) => job.status === "queued" || job.status === "running")
+  );
   const artifactsByTaskId = new Map(
     (
       await Promise.all(
@@ -43,6 +50,7 @@ export default async function TeamTasksPage({ params }: TeamTasksPageProps) {
           '"SF Mono", "JetBrains Mono", "Noto Sans SC", ui-sans-serif, sans-serif'
       }}
     >
+      <LiveRefresh active={shouldAutoRefresh} />
       <section style={{ maxWidth: 1120, margin: "0 auto", display: "grid", gap: 24 }}>
         <Link href={`/teams/${teamId}/workspace`} style={{ color: "#4dd0ff", textDecoration: "none" }}>
           返回团队工作台
@@ -62,6 +70,26 @@ export default async function TeamTasksPage({ params }: TeamTasksPageProps) {
           <p style={{ color: "#95b4c7", maxWidth: 720 }}>
             这里已经接通真实任务状态和 DeerFlow 执行结果。现在可以直接创建任务、分配员工并运行。
           </p>
+          {shouldAutoRefresh ? (
+            <div
+              style={{
+                marginTop: 14,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: 28,
+                padding: "0 12px",
+                borderRadius: 999,
+                background: "rgba(88, 217, 255, 0.14)",
+                color: "#8de8ff",
+                border: "1px solid rgba(127, 230, 255, 0.16)",
+                fontSize: 12,
+                fontWeight: 800
+              }}
+            >
+              实时更新中...
+            </div>
+          ) : null}
         </div>
 
         <section

@@ -13,8 +13,10 @@ import {
   getDiscussionMessages
 } from "@/lib/api";
 import { AutoScrollPanel } from "@/components/auto-scroll-panel";
+import { LiveRefresh } from "@/components/live-refresh";
 import { WorkspaceComposerForm } from "./composer-form";
 import { WorkspaceSidePanel } from "./side-panel";
+import { WorkspaceToolbar } from "./toolbar";
 
 type TeamWorkspacePageProps = {
   params: Promise<{
@@ -51,6 +53,23 @@ export default async function TeamWorkspacePage({
     latestTask ? getTaskArtifacts(latestTask.id) : Promise.resolve([]),
     latestAutonomyRunSummary ? getAutonomyRun(latestAutonomyRunSummary.id) : Promise.resolve(null)
   ]);
+  const projectArtifacts = (
+    await Promise.all(
+      tasks.map(async (task) => ({
+        taskId: task.id,
+        taskTitle: task.title,
+        artifacts: await getTaskArtifacts(task.id)
+      }))
+    )
+  ).flatMap(({ taskId, taskTitle, artifacts }) =>
+    artifacts.map((artifact) => ({
+      taskId,
+      taskTitle,
+      artifact,
+      openHref: getTaskArtifactOpenUrl(taskId, artifact.id),
+      downloadHref: getTaskArtifactDownloadUrl(taskId, artifact.id)
+    }))
+  );
 
   const latestUserMessage = [...discussionMessages].reverse().find((message) => message.senderType === "user") ?? null;
   const latestEmployeeMessages = [...discussionMessages]
@@ -79,6 +98,16 @@ export default async function TeamWorkspacePage({
       : null;
   const showAutonomyResult = Boolean(latestAutonomyRun);
   const autonomyPlan = latestAutonomyRun?.plannerOutput;
+  const workspaceDispatchSignal = getWorkspaceDispatchSignal(
+    latestAutonomyRun,
+    latestEmployeeMessages,
+    employeeNameById
+  );
+  const shouldAutoRefresh =
+    latestAutonomyRun?.status === "running" ||
+    latestTask?.status === "queued" ||
+    latestTask?.status === "running" ||
+    latestTask?.runtimeJobs.some((job) => job.status === "queued" || job.status === "running") === true;
   const mainScrollWatchKey = [
     latestUserMessage?.id ?? "no-user",
     latestEmployeeMessages.map((message) => message.id).join(",") || "no-employees",
@@ -91,6 +120,7 @@ export default async function TeamWorkspacePage({
 
   return (
     <main style={pageStyle}>
+      <LiveRefresh active={shouldAutoRefresh} />
       <section style={shellStyle}>
         <header style={topbarStyle}>
           <div style={{ display: "grid", gap: 4 }}>
@@ -100,11 +130,14 @@ export default async function TeamWorkspacePage({
             <h1 style={titleStyle}>{team?.name ?? "未命名团队"}</h1>
           </div>
 
-          <nav style={navStyle}>
-            <Link href={`/teams/${teamId}/discussion`} style={navLinkStyle}>讨论</Link>
-            <Link href={`/teams/${teamId}/tasks`} style={navLinkStyle}>任务</Link>
-            <Link href={`/teams/${teamId}/skills`} style={navLinkStyle}>员工技能</Link>
-          </nav>
+          <div style={topbarRightStyle}>
+            {shouldAutoRefresh ? <span style={liveBadgeStyle}>实时更新中...</span> : null}
+            <nav style={navStyle}>
+              <Link href={`/teams/${teamId}/discussion`} style={navLinkStyle}>历史讨论</Link>
+              <Link href={`/teams/${teamId}/tasks`} style={navLinkStyle}>任务</Link>
+              <Link href={`/teams/${teamId}/skills`} style={navLinkStyle}>员工技能</Link>
+            </nav>
+          </div>
         </header>
 
         <section style={workspaceStyle}>
@@ -119,6 +152,48 @@ export default async function TeamWorkspacePage({
                   <span style={youBadgeStyle}>你</span>
                 </div>
               </div>
+
+              {latestUserMessage ? (
+                <article style={workspaceEventCardStyle}>
+                  <div style={workspaceEventTopStyle}>
+                    <span style={workspaceEventBadgeStyle}>系统事件</span>
+                    <span style={workspaceEventStatusStyle}>协作中</span>
+                  </div>
+                  <div style={workspaceEventTitleStyle}>已向团队发起协作请求</div>
+                  <div style={workspaceEventTextStyle}>
+                    系统已将你的最新要求接入当前团队协作流。接下来团队会直接在这个工作台里回复、调整计划，或继续推进任务执行。
+                  </div>
+                  {latestDiscussion?.title ? (
+                    <div style={workspaceEventMetaStyle}>当前协作线程：{latestDiscussion.title}</div>
+                  ) : null}
+                </article>
+              ) : null}
+
+              {workspaceDispatchSignal ? (
+                <article
+                  style={{
+                    ...workspaceEventCardStyle,
+                    ...workspaceDispatchSignalCardStyle
+                  }}
+                >
+                  <div style={workspaceEventTopStyle}>
+                    <span style={workspaceEventBadgeStyle}>系统调度</span>
+                    <span
+                      style={{
+                        ...workspaceDispatchStatusStyle,
+                        ...getWorkspaceDispatchTone(workspaceDispatchSignal.tone)
+                      }}
+                    >
+                      {workspaceDispatchSignal.status}
+                    </span>
+                  </div>
+                  <div style={workspaceEventTitleStyle}>{workspaceDispatchSignal.title}</div>
+                  <div style={workspaceEventTextStyle}>{workspaceDispatchSignal.description}</div>
+                  {workspaceDispatchSignal.meta ? (
+                    <div style={workspaceEventMetaStyle}>{workspaceDispatchSignal.meta}</div>
+                  ) : null}
+                </article>
+              ) : null}
 
               {autonomyPlan ? (
                 <article style={systemPlanCardStyle}>
@@ -259,7 +334,7 @@ export default async function TeamWorkspacePage({
                   </article>
                 ))
               ) : (
-                <div style={emptyHintStyle}>还没有最新讨论结果，去讨论页发起一轮协作后，这里会显示结论。</div>
+                <div style={emptyHintStyle}>还没有团队最新反馈。你可以直接在下方输入任务，团队会在这里继续协作并返回结果。</div>
               )}
 
               {(showAutonomyResult || latestDiscussion?.summary || latestTask || latestArtifact) ? (
@@ -354,53 +429,11 @@ export default async function TeamWorkspacePage({
               ) : null}
             </AutoScrollPanel>
 
-            <div style={toolRowStyle}>
-              <ActionLink
-                href={workspacePanelHref(teamId, "discussion")}
-                label="清空记录"
-                active={sidePanelTab === "discussion"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "discussion")}
-                label="更新记忆"
-                active={sidePanelTab === "discussion"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "discussion")}
-                label="产出文件"
-                active={sidePanelTab === "discussion"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "autonomy")}
-                label="派发任务"
-                active={sidePanelTab === "autonomy"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "discussion")}
-                label="添加附件"
-                active={sidePanelTab === "discussion"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "autonomy")}
-                label="定时任务"
-                active={sidePanelTab === "autonomy"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "autonomy")}
-                label="SOP流程"
-                active={sidePanelTab === "autonomy"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "autonomy")}
-                label="∞ 自治接力"
-                active={sidePanelTab === "autonomy"}
-              />
-              <ActionLink
-                href={workspacePanelHref(teamId, "team")}
-                label="员工技能"
-                active={sidePanelTab === "team"}
-              />
-            </div>
+            <WorkspaceToolbar
+              teamId={teamId}
+              discussionId={latestDiscussion?.id}
+              projectArtifacts={projectArtifacts}
+            />
 
             <WorkspaceComposerForm
               teamId={teamId}
@@ -422,17 +455,6 @@ export default async function TeamWorkspacePage({
         </section>
       </section>
     </main>
-  );
-}
-
-function ActionLink(props: { href: string; label: string; active?: boolean }) {
-  return (
-    <Link
-      href={props.href}
-      style={props.active ? toolButtonActiveStyle : toolButtonStyle}
-    >
-      {props.label}
-    </Link>
   );
 }
 
@@ -499,10 +521,6 @@ function resolvePanelTab(value?: string): PanelTab {
   }
 
   return "discussion";
-}
-
-function workspacePanelHref(teamId: string, panel: PanelTab) {
-  return `/teams/${teamId}/workspace?panel=${panel}`;
 }
 
 function formatAutonomyRunStatus(status: string) {
@@ -614,6 +632,89 @@ function getAutonomyRunTone(status: string): React.CSSProperties {
   }
 }
 
+function getWorkspaceDispatchSignal(
+  run: Awaited<ReturnType<typeof getAutonomyRun>>,
+  latestEmployeeMessages: Awaited<ReturnType<typeof getDiscussionMessages>>,
+  employeeNameById: Map<string, string>
+) {
+  if (run) {
+    const activeStep =
+      run.steps.find((step) => step.status === "running") ??
+      run.steps.find((step) => step.status === "ready") ??
+      run.steps.find((step) => step.status === "blocked") ??
+      null;
+    const ownerName = activeStep
+      ? employeeNameById.get(activeStep.ownerEmployeeId) ?? activeStep.ownerEmployeeId
+      : null;
+
+    if (run.status === "needs_yin" || run.status === "waiting_user" || run.status === "blocked") {
+      return {
+        status: "待决策",
+        title: "系统需要进一步明确下一步动作",
+        description:
+          run.lastError ??
+          run.summary ??
+          "当前自治链路出现分歧或缺少上下文，建议打开右侧自治面板继续仲裁。",
+        meta: ownerName ? `当前停留员工：${ownerName}` : "请在右侧自治面板做继续、等待用户或终止决定。",
+        tone: "warning" as const
+      };
+    }
+
+    if (activeStep && (run.status === "running" || run.status === "completed")) {
+      return {
+        status: run.status === "completed" ? "已完成" : "进行中",
+        title:
+          run.status === "completed"
+            ? "系统已完成本轮协作调度"
+            : `系统已转交给 ${ownerName ?? "下一位员工"}`,
+        description:
+          activeStep.outputSummary ??
+          run.summary ??
+          `当前由 ${ownerName ?? "团队成员"} 负责推进「${activeStep.title}」，后续结果会继续同步到工作台。`,
+        meta: ownerName ? `当前步骤：${activeStep.title} · 负责人：${ownerName}` : null,
+        tone: run.status === "completed" ? ("success" as const) : ("info" as const)
+      };
+    }
+  }
+
+  const latestEmployeeMessage = latestEmployeeMessages[0];
+  if (latestEmployeeMessage?.senderId) {
+    const employeeName =
+      employeeNameById.get(latestEmployeeMessage.senderId) ?? latestEmployeeMessage.senderId;
+    return {
+      status: "已响应",
+      title: `系统已收到 ${employeeName} 的最新反馈`,
+      description: "团队正在基于你的要求继续推进，最新回复已经同步到当前主面板。",
+      meta: `最新响应员工：${employeeName}`,
+      tone: "info" as const
+    };
+  }
+
+  return null;
+}
+
+function getWorkspaceDispatchTone(
+  tone: "info" | "success" | "warning"
+): React.CSSProperties {
+  switch (tone) {
+    case "success":
+      return {
+        color: "#8bf0b7",
+        background: "rgba(24, 84, 52, 0.38)"
+      };
+    case "warning":
+      return {
+        color: "#ffe082",
+        background: "rgba(112, 86, 18, 0.34)"
+      };
+    default:
+      return {
+        color: "#8de8ff",
+        background: "rgba(88, 217, 255, 0.14)"
+      };
+  }
+}
+
 function getEmployeeAvatar(employeeId: string, index: number) {
   const avatarMap: Record<string, string> = {
     employee_xhs_ops: "/assets/avatar/avatar-01.svg",
@@ -666,6 +767,14 @@ const topbarStyle = {
   padding: "4px 2px"
 } satisfies React.CSSProperties;
 
+const topbarRightStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  flexWrap: "wrap",
+  justifyContent: "flex-end"
+} satisfies React.CSSProperties;
+
 const backLinkStyle = {
   color: "#59d9ff",
   textDecoration: "none",
@@ -683,6 +792,20 @@ const navStyle = {
   gap: 8,
   flexWrap: "wrap",
   justifyContent: "flex-end"
+} satisfies React.CSSProperties;
+
+const liveBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: 28,
+  padding: "0 12px",
+  borderRadius: 999,
+  background: "rgba(88, 217, 255, 0.14)",
+  color: "#8de8ff",
+  border: "1px solid rgba(127, 230, 255, 0.16)",
+  fontSize: 12,
+  fontWeight: 800
 } satisfies React.CSSProperties;
 
 const navLinkStyle = {
@@ -722,6 +845,77 @@ const mainColumnStyle = {
 const promptBarWrapStyle = {
   display: "flex",
   justifyContent: "flex-end"
+} satisfies React.CSSProperties;
+
+const workspaceEventCardStyle = {
+  borderRadius: 18,
+  background: "rgba(12, 34, 52, 0.92)",
+  border: "1px solid rgba(97, 226, 255, 0.14)",
+  padding: "14px 16px",
+  display: "grid",
+  gap: 8
+} satisfies React.CSSProperties;
+
+const workspaceDispatchSignalCardStyle = {
+  background: "rgba(13, 29, 43, 0.96)"
+} satisfies React.CSSProperties;
+
+const workspaceEventTopStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10
+} satisfies React.CSSProperties;
+
+const workspaceEventBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 52,
+  height: 24,
+  borderRadius: 999,
+  background: "rgba(88, 217, 255, 0.16)",
+  color: "#8de8ff",
+  fontSize: 11,
+  fontWeight: 900
+} satisfies React.CSSProperties;
+
+const workspaceEventStatusStyle = {
+  color: "#a8d9ec",
+  fontSize: 12,
+  fontWeight: 700
+} satisfies React.CSSProperties;
+
+const workspaceDispatchStatusStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 56,
+  height: 24,
+  padding: "0 10px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 800
+} satisfies React.CSSProperties;
+
+const workspaceEventTitleStyle = {
+  color: "#f4fbff",
+  fontSize: 18,
+  lineHeight: 1.2,
+  fontWeight: 900
+} satisfies React.CSSProperties;
+
+const workspaceEventTextStyle = {
+  color: "#b6d0df",
+  fontSize: 13,
+  lineHeight: 1.65
+} satisfies React.CSSProperties;
+
+const workspaceEventMetaStyle = {
+  color: "#82bdd7",
+  fontSize: 12,
+  lineHeight: 1.5,
+  fontWeight: 700
 } satisfies React.CSSProperties;
 
 const promptBarStyle = {
@@ -1207,34 +1401,6 @@ const artifactSecondaryActionStyle = {
   border: "1px solid rgba(88, 217, 255, 0.18)",
   fontSize: 12,
   fontWeight: 800
-} satisfies React.CSSProperties;
-
-const toolRowStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(9, minmax(0, 1fr))",
-  gap: 8,
-  flexShrink: 0
-} satisfies React.CSSProperties;
-
-const toolButtonStyle = {
-  minHeight: 28,
-  borderRadius: 8,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textDecoration: "none",
-  color: "#70ddff",
-  background: "rgba(10, 22, 36, 0.92)",
-  fontSize: 11,
-  fontWeight: 800
-} satisfies React.CSSProperties;
-
-const toolButtonActiveStyle = {
-  ...toolButtonStyle
-,
-  background: "rgba(18, 57, 85, 0.98)",
-  color: "#dff8ff",
-  boxShadow: "inset 0 0 0 1px rgba(84, 214, 255, 0.18)"
 } satisfies React.CSSProperties;
 
 const composerStyle = {

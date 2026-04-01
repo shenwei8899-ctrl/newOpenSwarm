@@ -109,6 +109,12 @@ export class ProjectsRepo {
     }));
   }
 
+  async deleteProject(projectId: string): Promise<void> {
+    await prisma.project.delete({
+      where: { id: projectId }
+    });
+  }
+
   async listProjectEmployees(projectId: string): Promise<ProjectEmployeeItem[]> {
     const employees = await prisma.employee.findMany({
       orderBy: { createdAt: "asc" },

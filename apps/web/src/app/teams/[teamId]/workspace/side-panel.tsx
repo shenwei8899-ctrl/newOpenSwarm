@@ -95,20 +95,78 @@ export function WorkspaceSidePanel({
   );
 }
 
+function formatStableDateTime(isoString: string) {
+  const timestamp = new Date(isoString).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(new Date(timestamp));
+}
+
+function splitDiscussionSummary(summary: string) {
+  const normalized = summary
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (normalized.length > 1) {
+    return normalized;
+  }
+
+  return summary
+    .split(/(?<=[。！？；])/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function DiscussionPanel({
   latestDiscussion
 }: {
   latestDiscussion: DiscussionSessionSummary | null;
 }) {
   return (
-    <section style={panelSectionStyle}>
-      <h2 style={sideTitleStyle}>最近讨论</h2>
+    <section style={discussionPanelStyle}>
+      <div style={discussionHeaderStyle}>
+        <span style={discussionEyebrowStyle}>最近讨论</span>
+        {latestDiscussion?.updatedAt ? (
+          <span style={discussionMetaStyle}>
+            {formatStableDateTime(latestDiscussion.updatedAt)}
+          </span>
+        ) : null}
+      </div>
+
       <div style={recentDiscussionStyle}>
-        <div style={recentDiscussionTitleStyle}>
-          {latestDiscussion?.title ?? "还没有讨论"}
+        <div style={recentDiscussionTitleWrapStyle}>
+          <div style={recentDiscussionTitleStyle}>
+            {latestDiscussion?.title ?? "还没有讨论"}
+          </div>
+          <span style={recentDiscussionStatusStyle}>
+            {latestDiscussion ? "最新摘要" : "待开始"}
+          </span>
         </div>
-        <div style={recentDiscussionTextStyle}>
-          {latestDiscussion?.summary ?? "从讨论页发起一轮协作，这里会自动显示团队最新结论。"}
+        {latestDiscussion ? (
+          <div style={recentDiscussionInfoRowStyle}>
+            <span style={recentDiscussionInfoChipStyle}>
+              {latestDiscussion.participantEmployeeIds.length} 位员工
+            </span>
+            <span style={recentDiscussionInfoTextStyle}>已同步到团队主工作台</span>
+          </div>
+        ) : null}
+        <div style={recentDiscussionTextWrapStyle}>
+          {splitDiscussionSummary(
+            latestDiscussion?.summary ?? "从讨论页发起一轮协作，这里会自动显示团队最新结论。"
+          ).map((paragraph, index) => (
+            <p key={`${paragraph}-${index}`} style={recentDiscussionTextStyle}>
+              {paragraph}
+            </p>
+          ))}
         </div>
       </div>
     </section>
@@ -119,8 +177,7 @@ function TeamPanel({ employees }: { employees: ProjectEmployeeItem[] }) {
   const employeeIndexById = new Map(employees.map((employee, index) => [employee.id, index]));
 
   return (
-    <section style={{ ...panelSectionStyle, minHeight: 0 }}>
-      <h2 style={sideTitleStyle}>团队数字员工</h2>
+    <section style={teamPanelStyle}>
       <div style={employeeListStyle}>
         {employees.length > 0 ? (
           employees.map((employee) => (
@@ -207,12 +264,6 @@ function AutonomyPanel({
   return (
     <section style={{ ...panelSectionStyle, minHeight: 0 }}>
       <div style={autonomyHeaderStyle}>
-        <div>
-          <h2 style={sideTitleStyle}>自治接力</h2>
-          <p style={autonomyHintStyle}>
-            让团队按角色顺序接力完成复杂任务，卡住时再升级给主控。
-          </p>
-        </div>
         <span style={autonomyBadgeStyle}>{latestAutonomyRun?.status ?? "idle"}</span>
       </div>
 
@@ -922,15 +973,37 @@ const panelSectionStyle = {
   minHeight: 0
 } satisfies React.CSSProperties;
 
-const sideTitleStyle = {
-  margin: 0,
-  fontSize: 16,
-  lineHeight: 1.1,
-  fontWeight: 900
+const discussionPanelStyle = {
+  display: "grid",
+  gap: 10,
+  alignContent: "start",
+  minHeight: 0
+} satisfies React.CSSProperties;
+
+const discussionHeaderStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  minHeight: 24
+} satisfies React.CSSProperties;
+
+const discussionEyebrowStyle = {
+  color: "#0f2334",
+  fontSize: 12,
+  fontWeight: 900,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase"
+} satisfies React.CSSProperties;
+
+const discussionMetaStyle = {
+  color: "#688090",
+  fontSize: 11,
+  fontWeight: 700
 } satisfies React.CSSProperties;
 
 const recentDiscussionStyle = {
-  borderRadius: 18,
+  borderRadius: 20,
   padding: "14px 14px 12px",
   background: "#112133",
   color: "#eff9ff",
@@ -939,37 +1012,91 @@ const recentDiscussionStyle = {
   minWidth: 0
 } satisfies React.CSSProperties;
 
+const recentDiscussionTitleWrapStyle = {
+  display: "flex",
+  alignItems: "start",
+  justifyContent: "space-between",
+  gap: 10
+} satisfies React.CSSProperties;
+
 const recentDiscussionTitleStyle = {
-  fontSize: 15,
+  fontSize: 16,
+  lineHeight: 1.3,
   fontWeight: 900
+} satisfies React.CSSProperties;
+
+const recentDiscussionInfoRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  flexWrap: "wrap"
+} satisfies React.CSSProperties;
+
+const recentDiscussionInfoChipStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: 22,
+  padding: "0 10px",
+  borderRadius: 999,
+  background: "rgba(255,255,255,0.06)",
+  color: "#d8ecf7",
+  fontSize: 11,
+  fontWeight: 800
+} satisfies React.CSSProperties;
+
+const recentDiscussionInfoTextStyle = {
+  color: "#86a6ba",
+  fontSize: 11,
+  fontWeight: 700
+} satisfies React.CSSProperties;
+
+const recentDiscussionTextWrapStyle = {
+  display: "grid",
+  gap: 8
+} satisfies React.CSSProperties;
+
+const recentDiscussionStatusStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: 24,
+  padding: "0 10px",
+  borderRadius: 999,
+  background: "rgba(87, 220, 255, 0.14)",
+  color: "#8de8ff",
+  fontSize: 11,
+  fontWeight: 800,
+  flexShrink: 0
 } satisfies React.CSSProperties;
 
 const recentDiscussionTextStyle = {
   color: "#aec7d8",
   fontSize: 12,
-  lineHeight: 1.6,
-  display: "-webkit-box",
-  WebkitLineClamp: 4,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden"
+  lineHeight: 1.65,
+  whiteSpace: "pre-wrap",
+  margin: 0
 } satisfies React.CSSProperties;
 
 const employeeListStyle = {
   minHeight: 0,
   overflow: "auto",
   display: "grid",
-  gap: 8,
-  paddingRight: 4
+  gap: 10,
+  paddingRight: 4,
+  alignContent: "start",
+  gridAutoRows: "max-content"
 } satisfies React.CSSProperties;
 
 const employeeCardStyle = {
-  borderRadius: 18,
+  borderRadius: 16,
   background: "#0f1f31",
   color: "#eef8ff",
-  padding: "10px 10px 9px",
+  padding: "10px 12px",
   display: "grid",
   gap: 8,
-  minWidth: 0
+  minWidth: 0,
+  minHeight: 118
 } satisfies React.CSSProperties;
 
 const employeeHeadStyle = {
@@ -1022,18 +1149,17 @@ const employeeStatusStyle = {
   color: "#4ae0ad"
 } satisfies React.CSSProperties;
 
-const autonomyHeaderStyle = {
-  display: "flex",
-  alignItems: "start",
-  justifyContent: "space-between",
-  gap: 8
+const teamPanelStyle = {
+  display: "grid",
+  minHeight: 0,
+  alignContent: "start"
 } satisfies React.CSSProperties;
 
-const autonomyHintStyle = {
-  margin: "4px 0 0",
-  color: "#688090",
-  fontSize: 12,
-  lineHeight: 1.5
+const autonomyHeaderStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: 8
 } satisfies React.CSSProperties;
 
 const autonomyBadgeStyle = {
@@ -1231,7 +1357,7 @@ const autonomyGoalStyle = {
 const primaryActionStyle = {
   height: 34,
   borderRadius: 10,
-  border: 0,
+  border: "1px solid rgba(127, 230, 255, 0.18)",
   background: "#112133",
   color: "#7fe6ff",
   fontSize: 12,
@@ -1692,9 +1818,9 @@ const secondaryActionStyle = {
   height: 32,
   minWidth: 68,
   borderRadius: 10,
-  border: 0,
-  background: "rgba(127, 230, 255, 0.12)",
-  color: "#8de8ff",
+  border: "1px solid rgba(127, 230, 255, 0.18)",
+  background: "#112133",
+  color: "#7fe6ff",
   fontSize: 12,
   fontWeight: 800
 } satisfies React.CSSProperties;

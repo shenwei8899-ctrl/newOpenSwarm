@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import type {
   CreateDiscussionInput,
   CreateDiscussionMessageInput,
@@ -54,5 +54,13 @@ export class DiscussionsController {
       discussionId,
       body.rounds ?? 1
     );
+  }
+
+  @Delete("discussions/:discussionId")
+  async deleteDiscussion(
+    @Param("discussionId") discussionId: string
+  ): Promise<{ ok: true }> {
+    await this.discussionsService.deleteDiscussion(discussionId);
+    return { ok: true };
   }
 }

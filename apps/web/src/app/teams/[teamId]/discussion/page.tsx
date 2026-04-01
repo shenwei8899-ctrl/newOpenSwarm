@@ -76,11 +76,11 @@ export default async function TeamDiscussionPage({ params }: TeamDiscussionPageP
           }}
         >
           <div style={{ color: "#4dd0ff", marginBottom: 10, fontWeight: 700 }}>
-            STEP 4 / 群聊讨论
+            STEP 4 / 历史讨论
           </div>
-          <h1 style={{ margin: 0, fontSize: 42 }}>讨论工作台</h1>
+          <h1 style={{ margin: 0, fontSize: 42 }}>历史讨论工作台</h1>
           <p style={{ color: "#95b4c7", maxWidth: 720 }}>
-            团队已经完成成员和技能配置，现在可以直接创建讨论、发消息并触发一轮多员工讨论。
+            这里保留团队历史讨论和完整消息详情。日常协作优先在工作台内直接和团队沟通，这里更适合回看、追踪和管理讨论过程。
           </p>
         </div>
 
